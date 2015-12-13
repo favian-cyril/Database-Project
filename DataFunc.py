@@ -31,3 +31,7 @@ def getMetaData(schema, table):
             FROM INFORMATION_SCHEMA.COLUMNS where table_name = '{}';".format(table))
     meta = cur.fetchall()
     return meta
+
+def closeConnection():
+    curr.close()
+    conn.close()
