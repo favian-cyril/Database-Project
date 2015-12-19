@@ -1,7 +1,7 @@
 import psycopg2
 import datetime
 
-conn = psycopg2.connect("dbname=Gujek user=postgres password=123")
+conn = psycopg2.connect("dbname=Gujek user=postgres password=asd")
 cur = conn.cursor()
 
 def insert(schema, table, *values):
@@ -45,7 +45,25 @@ def showTable(schema, table):
         for col in rows:
             print("{},".format(col),end='')
         print('\n')
-        
+
+def getSchemas():
+    """
+    get all schemas from the database
+    """
+    cur.execute("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA")
+    data = cur.fetchall()
+    data = data[5:-1]
+    return data
+
+def getTables(schema):
+    cur.execute("SELECT * FROM information_schema.tables \
+                    WHERE table_schema = '{}'".format(schema))
+    data = cur.fetchall()
+    temp = []
+    for i in range(len(data)):
+        temp.append(data[i][2])
+    return temp
+
 def getMetaData(schema, table):
     """
     get the meta data from a table

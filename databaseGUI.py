@@ -1,5 +1,6 @@
 from tkinter import *
 import tkinter.ttk as ttk
+import DataFunc
 
 class GUI(object):
     def __init__(self):
@@ -7,7 +8,7 @@ class GUI(object):
         window.title("Gujek Database Application")
         window.configure()
         window.resizable(width=FALSE, height=FALSE)
-        window.geometry("{}x{}".format(700, 600))
+        window.geometry("{}x{}".format(900, 600))
         
         gojek = PhotoImage(file="gojek.gif")
         self.photo = Label(window, image=gojek)
@@ -23,8 +24,11 @@ class GUI(object):
         schemaLbl.grid(row=1, column=0, sticky=W)
         
         self.schemaVar = StringVar()
-        sch = ["Schema 1", "Schema 2", "Schema 3"]
-        self.schemaVar.set("Schema 1")
+        sch = []
+        temp = DataFunc.getSchemas()
+        for i in temp:
+            sch.append(i[0])
+        self.schemaVar.set(temp[0][0])
         schemaMenu = OptionMenu(self.frame1, self.schemaVar, *sch, command=self.change)
         schemaMenu.grid(row=1, column=1, sticky=W)
 
@@ -45,17 +49,13 @@ class GUI(object):
         scrollx = Scrollbar(frame2, orient="horizontal")
         scrollx.pack(fill=X)
 
-        self.box = ttk.Treeview(frame2, columns=("col1", "col2"), selectmode="extended", displaycolumns=None) # this is how you set columns
+        self.box = ttk.Treeview(frame2, columns=("col1", "col2", 'col3'), selectmode="extended", displaycolumns=None) # this is how you set columns
         self.box.pack(side=LEFT, fill=Y)
 
         scrolly.config(command=self.box.yview)
         scrollx.config(command=self.box.xview)
         self.box.config(xscrollcommand=scrollx.set, yscrollcommand=scrolly.set)
-        
-        self.box.heading("#0", text="col0") # this is how you change column name
-        self.box.heading("col1", text="col1")
-        self.box.heading("col2", text="col2")
-
+        # this is how you change column name
         self.box.bind("<Double-1>", self.onClick)# test method untuk click event
 
         def inserttest():
@@ -63,57 +63,46 @@ class GUI(object):
             for i in range(20):
                 self.box.insert("", "end", n, text=n, values=("test", "test again")) #this is how you add to table
                 n += 1
-
+    
         inserttest()
 
         window.mainloop()
             
     def change(self, val):
-        T1flag = False
-        T2flag = False
-        T3flag = False
-
         tableLbl = Label(self.frame1, text="    Table:")
         tableLbl.grid(row=1, column=2, sticky=W)
-    
-        if self.schemaVar.get() == "Schema 1":   
-            self.tableVar.set("S1 Table 1")
-            self.tableS1Menu = OptionMenu(self.frame1, self.tableVar, "S1 Table 1", "S1 Table 2", "S1 Table 3", command=self.change2)
-            if T2flag == True:
-                self.tableS3Menu.grid_forget()
-            if T3flag == True:
-                self.tableS2Menu.grid_forget()
-            self.tableS1Menu.grid(row=1, column=3, sticky=W)
-            T1flag = True
-        elif self.schemaVar.get() == "Schema 2":
-            self.tableVar.set("S2 Table 1")
-            self.tableS2Menu = OptionMenu(self.frame1, self.tableVar, "S2 Table 1", "S2 Table 2", "S2 Table 3", command=self.change2)
-            if T1flag == True:
-                self.tableS1Menu.grid_forget()
-            if T3flag == True:
-                self.tableS2Menu.grid_forget()
-            self.tableS2Menu.grid(row=1, column=3, sticky=W)
-            T2flag = True
-        elif self.schemaVar.get() == "Schema 3":
-            self.tableVar.set("S3 Table 1")
-            self.tableS3Menu = OptionMenu(self.frame1, self.tableVar, "S3 Table 1", "S3 Table 2", "S3 Table 3", command=self.change2)
-            if T2flag == True:
-                self.tableS3Menu.grid_forget()
-            if T1flag == True:
-                self.tableS1Menu.grid_forget()
-            self.tableS3Menu.grid(row=1, column=3, sticky=W)
-            T3flag = True
 
+        schema = DataFunc.getSchemas()
+        self.new = []
+        for s in schema:
+            temp = (s[0],DataFunc.getTables(s[0]))
+            self.new.append(temp)
+        for s in self.new:
+            if self.schemaVar.get() == s[0]:
+                self.schemaCurr = s[1:]
+                self.schemaCurr = self.schemaCurr[0]
+        self.tableMenu = OptionMenu(self.frame1, self.tableVar,*self.schemaCurr, command=self.change2)
+        self.tableMenu.grid(row=1, column=3, sticky=W)
     def change2(self, val):
         opLbl = Label(self.frame1, text="    Operation:")
         opLbl.grid(row=1, column=4, sticky=W)
         self.operation.grid(row=1, column=5, sticky=W)
         self.opVar.set("Show")
+        temp = []
+        for table in self.schemaCurr:
+            if self.tableVar.get() == table:
+                for col in DataFunc.getMetaData(self.new[0],table):
+                    print(col)
+                    temp.append(col[0])
+        print(temp)
+        self.box['columns'] = tuple(temp)
+        for i in range(len(temp)):
+            
 
 
     # method untuk click event
     def onClick(self, event):
-        item = self.box.selection()[0]
+        item = self.box.selection()
         print("You clicked on", self.box.item(item, "text"))
 
 GUI()
