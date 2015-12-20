@@ -4,13 +4,43 @@ import DataFunc
 
 class GUI(object):
     def __init__(self):
+        self.login = Tk()
+        self.login.title("Login to Database")
+        self.login.geometry("{}x{}".format(220, 100))
+        frame = Frame(self.login)
+        frame.pack()
+        dbLabel = Label(frame, text="Database")
+        dbLabel.grid(row=1, column=0, sticky=W)
+        self.dbVar = StringVar()
+        dbEntry = ttk.Entry(frame, textvariable=self.dbVar)
+        dbEntry.grid(row=1, column=1, sticky=W)
+        uLabel = Label(frame, text="Username")
+        uLabel.grid(row=2, column=0, sticky=W)
+        self.uVar = StringVar()
+        uEntry = ttk.Entry(frame, textvariable=self.uVar)
+        uEntry.grid(row=2, column=1, sticky=W)
+        passLabel = Label(frame, text="Password")
+        passLabel.grid(row=3, column=0, sticky=W)
+        self.passVar = StringVar()
+        passEntry = ttk.Entry(frame, textvariable=self.passVar, show='*')
+        passEntry.grid(row=3, column=1, sticky=W)
+        button = ttk.Button(frame, text='Connect', command=self.connect)
+        button.grid(row=4,column=0,sticky=W)
+    def connect(self):
+        DataFunc.connect(self.dbVar.get(),self.uVar.get(),self.passVar.get())
+        self.login.destroy()
+        self.gui()
+        
+    def gui(self):
         window = Tk()
         window.title("Gujek Database Application")
         window.configure()
         window.resizable(width=FALSE, height=FALSE)
         window.geometry("{}x{}".format(1000, 400))
+
         
-        gojek = PhotoImage(file="gojek.gif")
+        
+        gojek = PhotoImage(master=window,file="gojek.gif")
         self.photo = Label(window, image=gojek)
         self.photo.grid(row=0, sticky=W)
 
@@ -38,8 +68,13 @@ class GUI(object):
         self.tableVar = StringVar()
 
         self.opVar = StringVar()
-        ops = ["Show", "Insert", "Update", "Delete"]
-        self.operation = OptionMenu(self.frame1, self.opVar, *ops)
+        self.button1 = ttk.Button(self.frame1, text='Insert', command=self.insertData)
+
+        self.button2 = ttk.Button(self.frame1, text='Update', command=self.updateData)
+        
+        self.button3 = ttk.Button(self.frame1, text='Delete',command=self.deleteData)
+        
+
 
         frame2 = Frame(window)
         frame2.grid(row=3)
@@ -56,23 +91,14 @@ class GUI(object):
         scrolly.config(command=self.box.yview)
         scrollx.config(command=self.box.xview)
         self.box.config(xscrollcommand=scrollx.set, yscrollcommand=scrolly.set)
-        # this is how you change column name
-        self.box.bind("<Double-1>", self.onClick)# test method untuk click event
-
-##        def inserttest():
-##            n = 0
-##            for i in range(20):
-##                self.box.insert("", "end", n, text=n, values=("test", "test again")) #this is how you add to table
-##                n += 1
-##    
-##        inserttest()
-
         window.mainloop()
             
     def change(self, val):
         tableLbl = Label(self.frame1, text="    Table:")
         tableLbl.grid(row=1, column=2, sticky=W)
-
+        self.button1.grid(row=1,column=4,sticky=W)
+        self.button2.grid(row=1,column=5,sticky=W)
+        self.button3.grid(row=1,column=6,sticky=W)
         schema = DataFunc.getSchemas()
         self.new = []
         for s in schema:
@@ -86,19 +112,16 @@ class GUI(object):
         self.tableMenu.grid(row=1, column=3, sticky=W)
     def change2(self, val):
         self.box.delete(*self.box.get_children())
-        opLbl = Label(self.frame1, text="    Operation:")
-        opLbl.grid(row=1, column=4, sticky=W)
-        self.operation.grid(row=1, column=5, sticky=W)
         self.opVar.set("Show")
-        temp = []
+        self.columns = []
         
         for table in self.schemaCurr:
             if self.tableVar.get() == table:
                 for col in DataFunc.getMetaData(self.new[0],table):
-                    temp.append(col[0])
-        #print(temp)
-        self.box['columns'] = tuple(temp)
-        for i in temp:
+                    self.columns.append(col[0])
+        self.box['columns'] = tuple(self.columns)
+        for i in self.columns:
+            self.box.column(i, minwidth=0, stretch=False)
             self.box.heading(i, text=i)
         data = DataFunc.getData(self.schemaVar.get(),self.tableVar.get())
         n = 0
@@ -106,10 +129,51 @@ class GUI(object):
             self.box.insert("", "end", n, text=n, values=d)
             n += 1
 
-
-    # method untuk click event
-    def onClick(self, event):
+    def deleteData(self):
         item = self.box.selection()
-        print("You clicked on", self.box.item(item, "text"))
+        current = self.box.item(item, "values")[0]
+        DataFunc.delete(self.schemaVar.get(),self.tableVar.get(),current)
 
+    def insertData(self):
+        self.query(self.columns, typequery='insert')
+
+    def updateData(self):
+        self.query(self.columns, typequery='update')
+
+    def query(self, questions, typequery):
+        self.query = Tk()
+        self.query.title("Enter Values")
+        self.query.geometry("{}x{}".format(300, len(questions)*20+30))
+        frame = Frame(self.query)
+        frame.pack()
+        quesArr = []
+        self.entryArr = []
+        for q in range(len(questions)):
+            quesArr.append(Label(frame, text="{}".format(questions[q])))
+            quesArr[q].grid(row=q+1, column=0, sticky=W)
+            self.entryArr.append(Entry(frame))
+            item = self.box.selection()
+            for i in  self.entryArr:
+                self.entryArr[q].insert(END, self.box.item(item, 'values')[q])
+            self.entryArr[q].grid(row=q+1, column=1, sticky=W)
+        if typequery == 'insert':  
+            button = ttk.Button(frame, text='Connect',command=self.dataInsert)
+        elif typequery == 'update':
+            button = ttk.Button(frame, text='Connect',command=self.dataUpdate)
+        button.grid(row=len(questions)+1,column=1,sticky=W)
+        
+    def dataInsert(self):
+        data = []
+        for i in self.entryArr:
+            data.append(i.get())
+        DataFunc.insert(self.schemaVar.get(),self.tableVar.get(),*data)
+        self.query.destroy()
+
+    def dataUpdate(self):      
+        item = self.box.selection()
+        data = []
+        for i in self.entryArr:
+            data.append(i.get())
+        DataFunc.update(self.schemaVar.get(),self.tableVar.get(),self.box.item(item,"values"),*data)
+        self.query.destroy()
 GUI()

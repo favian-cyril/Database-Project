@@ -1,8 +1,10 @@
 import psycopg2
 import datetime
 
-conn = psycopg2.connect("dbname=Gujek user=postgres password=asd")
-cur = conn.cursor()
+def connect(db,user,password):
+    global cur,conn
+    conn = psycopg2.connect("dbname={} user={} password={}".format(db,user,password))
+    cur = conn.cursor()
 
 def insert(schema, table, *values):
     """
@@ -28,7 +30,14 @@ def update(schema, table, condition, *values):
     """
     meta = getMetaData(schema, table)
     pkey = meta[0][0]
-    cur.execute("UPDATE {}.{} SET {} WHERE {}='{}';".format(schema,table,values,pkey,condition))
+    head = []
+    for rows in meta:
+        head.append(rows[0])
+    query = ''
+    for i in range(len(head)):
+        query += head[i] + '=' + "'{}'".format(values[i]) + ','
+    query = query[:-1]
+    cur.execute("UPDATE {}.{} SET {} WHERE {}='{}';".format(schema,table,query,pkey,condition))
     conn.commit()
 
 def showTable(schema, table):
@@ -88,5 +97,5 @@ def closeConnection():
     """
     Close connection to database
     """
-    curr.close()
+    cur.close()
     conn.close()
