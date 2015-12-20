@@ -8,7 +8,7 @@ class GUI(object):
         window.title("Gujek Database Application")
         window.configure()
         window.resizable(width=FALSE, height=FALSE)
-        window.geometry("{}x{}".format(900, 600))
+        window.geometry("{}x{}".format(1000, 400))
         
         gojek = PhotoImage(file="gojek.gif")
         self.photo = Label(window, image=gojek)
@@ -51,6 +51,7 @@ class GUI(object):
 
         self.box = ttk.Treeview(frame2, columns=("col1", "col2", 'col3'), selectmode="extended", displaycolumns=None) # this is how you set columns
         self.box.pack(side=LEFT, fill=Y)
+        self.box.column('#0', stretch=NO, minwidth=0, width=0)
 
         scrolly.config(command=self.box.yview)
         scrollx.config(command=self.box.xview)
@@ -58,13 +59,13 @@ class GUI(object):
         # this is how you change column name
         self.box.bind("<Double-1>", self.onClick)# test method untuk click event
 
-        def inserttest():
-            n = 0
-            for i in range(20):
-                self.box.insert("", "end", n, text=n, values=("test", "test again")) #this is how you add to table
-                n += 1
-    
-        inserttest()
+##        def inserttest():
+##            n = 0
+##            for i in range(20):
+##                self.box.insert("", "end", n, text=n, values=("test", "test again")) #this is how you add to table
+##                n += 1
+##    
+##        inserttest()
 
         window.mainloop()
             
@@ -84,20 +85,26 @@ class GUI(object):
         self.tableMenu = OptionMenu(self.frame1, self.tableVar,*self.schemaCurr, command=self.change2)
         self.tableMenu.grid(row=1, column=3, sticky=W)
     def change2(self, val):
+        self.box.delete(*self.box.get_children())
         opLbl = Label(self.frame1, text="    Operation:")
         opLbl.grid(row=1, column=4, sticky=W)
         self.operation.grid(row=1, column=5, sticky=W)
         self.opVar.set("Show")
         temp = []
+        
         for table in self.schemaCurr:
             if self.tableVar.get() == table:
                 for col in DataFunc.getMetaData(self.new[0],table):
-                    print(col)
                     temp.append(col[0])
-        print(temp)
+        #print(temp)
         self.box['columns'] = tuple(temp)
-        for i in range(len(temp)):
-            
+        for i in temp:
+            self.box.heading(i, text=i)
+        data = DataFunc.getData(self.schemaVar.get(),self.tableVar.get())
+        n = 0
+        for d in data:
+            self.box.insert("", "end", n, text=n, values=d)
+            n += 1
 
 
     # method untuk click event

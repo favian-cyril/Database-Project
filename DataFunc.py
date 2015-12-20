@@ -46,6 +46,17 @@ def showTable(schema, table):
             print("{},".format(col),end='')
         print('\n')
 
+def getData(schema, table):
+    cur.execute("SELECT * FROM {}.{};".format(schema,table))
+    data = cur.fetchall()
+    new = []
+    for rows in data:
+        row = []
+        for col in rows:
+            row.append(col)
+        new.append(tuple(row))
+    return new
+
 def getSchemas():
     """
     get all schemas from the database
